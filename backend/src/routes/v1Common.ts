@@ -211,8 +211,8 @@ export function v1CommonRouter(store: AdminStore) {
     }
     const who = await whoAmI(req);
     await p.query(
-      `INSERT INTO company_info (id, name, logo_data_url, updated_by)
-       VALUES (1, ?, ?, ?)
+      `INSERT INTO company_info (id, name, address, logo_data_url, updated_by)
+       VALUES (1, ?, '', ?, ?)
        ON DUPLICATE KEY UPDATE
          name          = COALESCE(NULLIF(VALUES(name), ''), name),
          logo_data_url = CASE WHEN VALUES(logo_data_url) = '' THEN logo_data_url ELSE VALUES(logo_data_url) END,
