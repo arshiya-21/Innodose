@@ -73,7 +73,7 @@ export function startAlertMailer(): void {
 
       const [fetched] = await pool.query<DoseRow[]>(
         `SELECT c.id, c.datetime, c.\`BOX COUNT\` AS box_count, c.\`COMPONENT ID\` AS component_id,
-                m.name AS component_name, c.\`POURING TIME\` AS pour, c.${q(src.column)} AS actual, m.expected_dosage_gms AS expected
+                m.name AS component_name, GREATEST(COALESCE(c.\`POURING TIME\`,0), COALESCE(m.pouring_time_sec,0)) AS pour, c.${q(src.column)} AS actual, m.expected_dosage_gms AS expected
            FROM ${t} c LEFT JOIN components m ON m.component_id = c.\`COMPONENT ID\`
           WHERE c.id > ? ORDER BY c.id ASC LIMIT 200`,
         [lastId],

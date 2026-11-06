@@ -252,6 +252,7 @@ export function v1CommonRouter(store: AdminStore) {
               c.\`BOX COUNT\`           AS box_count,
               c.\`COMPONENT ID\`        AS component_id,
               c.\`POURING TIME\`        AS pouring_time,
+              m.pouring_time_sec       AS target_pour,
               c.${q(src.column)}       AS weight_of_inoculant,
               m.expected_dosage_gms    AS expected_dosage_gms
          FROM ${q(src.table)} c
@@ -264,7 +265,7 @@ export function v1CommonRouter(store: AdminStore) {
 
     const rules = await loadAlertRules(p);
     const out = rows
-      .filter(r => isSettled(r.datetime, (r as { pouring_time?: number | null }).pouring_time)) // no alarm while a box is still being dosed
+      .filter(r => isSettled(r.datetime, Math.max(Number((r as { pouring_time?: number | null }).pouring_time ?? 0), Number((r as { target_pour?: number | null }).target_pour ?? 0)))) // no alarm while a box is still being dosed
       .map(r => ({ row: r, type: classifyDose(r.weight_of_inoculant, r.expected_dosage_gms, rules.tols, rules.enabled) }))
       .filter(x => x.type !== null)
       .slice(0, 20)
