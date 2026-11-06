@@ -14,7 +14,7 @@
  */
 import nodemailer from 'nodemailer';
 import mysql, { type Pool, type RowDataPacket } from 'mysql2/promise';
-import { classifyDose } from './alertRules.ts';
+import { classifyDose, isSettled } from './alertRules.ts';
 import { loadAlertRules } from './v1Common.ts';
 import { getAlertSource, q } from './alertSource.ts';
 import { log as rootLog } from '../lib/logger.ts';
@@ -71,13 +71,16 @@ export function startAlertMailer(): void {
         return;
       }
 
-      const [rows] = await pool.query<DoseRow[]>(
+      const [fetched] = await pool.query<DoseRow[]>(
         `SELECT c.id, c.datetime, c.\`BOX COUNT\` AS box_count, c.\`COMPONENT ID\` AS component_id,
-                m.name AS component_name, c.${q(src.column)} AS actual, m.expected_dosage_gms AS expected
+                m.name AS component_name, c.\`POURING TIME\` AS pour, c.${q(src.column)} AS actual, m.expected_dosage_gms AS expected
            FROM ${t} c LEFT JOIN components m ON m.component_id = c.\`COMPONENT ID\`
           WHERE c.id > ? ORDER BY c.id ASC LIMIT 200`,
         [lastId],
       );
+      // Stop at the first box that is still being dosed: it is picked up on a later tick, once it is complete.
+      const firstOpen = fetched.findIndex((r) => !isSettled(r.datetime, (r as unknown as { pour: number | null }).pour));
+      const rows = firstOpen === -1 ? fetched : fetched.slice(0, firstOpen);
       if (!rows.length) return;
       lastId = Number(rows[rows.length - 1].id); // advance first: a failure below must not cause re-sends
 

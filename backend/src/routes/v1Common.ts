@@ -12,7 +12,7 @@ import { Router } from 'express';
 import mysql, { type Pool, type RowDataPacket } from 'mysql2/promise';
 import type { AdminStore } from '../admin/store.ts';
 import { requireAuthV1 } from './authV1.ts';
-import { classifyDose, type TolMap } from './alertRules.ts';
+import { classifyDose, isSettled, type TolMap } from './alertRules.ts';
 import { getAlertSource, q } from './alertSource.ts';
 
 let pool: Pool | null = null;
@@ -233,6 +233,7 @@ export function v1CommonRouter(store: AdminStore) {
               c.datetime,
               c.\`BOX COUNT\`           AS box_count,
               c.\`COMPONENT ID\`        AS component_id,
+              c.\`POURING TIME\`        AS pouring_time,
               c.${q(src.column)}       AS weight_of_inoculant,
               m.expected_dosage_gms    AS expected_dosage_gms
          FROM ${q(src.table)} c
@@ -245,6 +246,7 @@ export function v1CommonRouter(store: AdminStore) {
 
     const rules = await loadAlertRules(p);
     const out = rows
+      .filter(r => isSettled(r.datetime, (r as { pouring_time?: number | null }).pouring_time)) // no alarm while a box is still being dosed
       .map(r => ({ row: r, type: classifyDose(r.weight_of_inoculant, r.expected_dosage_gms, rules.tols, rules.enabled) }))
       .filter(x => x.type !== null)
       .slice(0, 20)
@@ -272,7 +274,7 @@ export function v1CommonRouter(store: AdminStore) {
     const p = getPool();
     if (!p) return res.json({ id: req.params.id, time: '00:00:00', boxNo: '—', type: 'Over Dose', acknowledged: true });
 
-    const numericId = Number(req.params.id.replace(/^a/, ''));
+    const numericId = Number(String(req.params.id).replace(/^a/, ''));
     const src = await getAlertSource(p);
     const [rows] = await p.query<CastingAlertRow[]>(
       `SELECT c.id, c.datetime, c.\`BOX COUNT\` AS box_count,

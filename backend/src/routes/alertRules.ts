@@ -30,6 +30,16 @@ export function tolFor(map: TolMap, alertType: string): Tol {
   return t ?? { min: 0, max: 0 };
 }
 
+/**
+ * A dose row is written when pouring STARTS and its weight grows until pouring ends, so a half-finished box
+ * would look like an "Under Dose". A row only counts (alert / e-mail) once its pouring time (+5 s) has passed.
+ */
+export function isSettled(datetime: string | Date, pouringTimeSec: number | null | undefined): boolean {
+  const t = datetime instanceof Date ? datetime.getTime() : new Date(String(datetime).replace(' ', 'T')).getTime();
+  if (!Number.isFinite(t)) return true;
+  return Date.now() - t >= (Math.min(Math.max(Number(pouringTimeSec ?? 0), 0), 120) + 5) * 1000;
+}
+
 export type LiveAlertType = 'Over Dose' | 'Under Dose' | 'Dose Miss' | 'Pipe Choked';
 
 /** Returns the alert to raise for one dose, or null when it is within tolerance. */

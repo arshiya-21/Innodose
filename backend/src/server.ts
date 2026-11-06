@@ -1,4 +1,7 @@
 import 'dotenv/config';
+// Plant clock: alert times, the header clock and shift all use the server's local time. Cloud hosts default to UTC,
+// which showed 17:31 when the plant clock said 23:01. Set TZ in the environment to override.
+process.env.TZ ||= 'Asia/Kolkata';
 import './asyncSafe.ts'; // must come first: lets a failing async route return 500 instead of killing the process
 import express from 'express';
 import path from 'node:path';
