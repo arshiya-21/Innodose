@@ -1,0 +1,118 @@
+import { useState, type FormEvent, type ReactNode } from 'react';
+import { Navigate, useNavigate } from 'react-router';
+import { Checkbox, Icon } from '@/components/ui';
+import { useAuth } from '@/context/AuthContext';
+import { cn } from '@/lib/cn';
+import logoMark from '@/assets/images/inodose-logo-mark.png';
+
+export function LoginPage() {
+  const { user, signIn } = useAuth();
+  const navigate = useNavigate();
+  // Always land on the dashboard after a successful login — don't restore the
+  // page the user was on when they signed out.
+  const from = '/dashboard';
+  const [userId, setUserId] = useState('');
+  const [password, setPassword] = useState('');
+  const [show, setShow] = useState(false);
+  const [stay, setStay] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [forgot, setForgot] = useState(false);
+
+  if (user) return <Navigate to={from} replace />;
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!userId.trim()) return setError('Enter your User ID');
+    if (!password) return setError('Enter your Password');
+    setBusy(true);
+    const err = await signIn(userId.trim(), password, stay);
+    setBusy(false);
+    if (err) setError(err);
+    else navigate(from, { replace: true });
+  }
+
+  return (
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-white px-4 py-10">
+      <img src={logoMark} alt="Inodose" className="h-24 w-auto object-contain sm:h-28" />
+      <p className="mt-2 type-title-3 text-center text-gray-600">Stream Inoculation Dosing Machine</p>
+      <form onSubmit={submit} noValidate className="anim-pop mt-8 w-full max-w-[430px] rounded-lg bg-white px-6 py-7 shadow-[0_4px_24px_rgba(0,0,0,0.10)] sm:px-8 sm:py-8">
+        <h1 className="text-center type-headline-1 text-gray-600">Sign in to monitor and operate your machines.</h1>
+        <div className="mt-8 flex flex-col gap-6">
+          <LineField id="userId" label="User ID" placeholder="Enter your User ID" value={userId} onChange={setUserId} autoComplete="username" />
+          <LineField
+            id="password"
+            label="Password"
+            placeholder="Enter your Password"
+            value={password}
+            onChange={setPassword}
+            type={show ? 'text' : 'password'}
+            autoComplete="current-password"
+            error={error}
+            trailing={
+              <button type="button" onClick={() => setShow((s) => !s)} aria-label={show ? 'Hide password' : 'Show password'} className="text-gray-800">
+                <Icon name={show ? 'eye-off' : 'eye'} size={18} />
+              </button>
+            }
+          />
+        </div>
+        <div className="mt-6 flex items-center justify-between">
+          <Checkbox checked={stay} onChange={setStay} label="Stay Signed In" showLabel tone="blue" />
+          <button type="button" onClick={() => setForgot((v) => !v)} className="type-body-2 text-dosing-blue underline underline-offset-2" title="Contact your plant administrator to reset your password.">
+            Forgot Password?
+          </button>
+        </div>
+        {forgot && (
+          <p role="status" className="mt-4 rounded-sm bg-gray-100 px-3 py-2 type-body-2 text-gray-700">
+            Passwords are reset by your plant administrator. Ask them to set a new password for your User ID in Administration → Users, then sign in and change it from your profile.
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={busy}
+          className="mt-8 h-12 w-full rounded-sm bg-gray-800 type-title-1 text-white hover:bg-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dosing-blue disabled:cursor-not-allowed disabled:bg-gray-400"
+        >
+          {busy ? 'Signing in…' : 'Sign In'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function LineField(p: {
+  id: string;
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  autoComplete?: string;
+  error?: string | null;
+  trailing?: ReactNode;
+}) {
+  return (
+    <div>
+      <label htmlFor={p.id} className="block type-body-1 text-gray-800">{p.label}</label>
+      <div className={cn('mt-2 flex items-center border-b', p.error ? 'border-brand-red' : 'border-gray-300')}>
+        <input
+          id={p.id}
+          type={p.type ?? 'text'}
+          value={p.value}
+          placeholder={p.placeholder}
+          autoComplete={p.autoComplete}
+          aria-invalid={!!p.error || undefined}
+          aria-describedby={p.error ? `${p.id}-error` : undefined}
+          onChange={(e) => p.onChange(e.target.value)}
+          className="h-9 w-full bg-transparent type-title-3 text-gray-800 outline-none placeholder:text-gray-400"
+        />
+        {p.trailing}
+      </div>
+      {p.error && (
+        <p id={`${p.id}-error`} className="mt-2 flex items-center gap-2 type-body-1 text-brand-red">
+          <Icon name="info" size={16} /> {p.error}
+        </p>
+      )}
+    </div>
+  );
+}

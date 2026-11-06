@@ -1,0 +1,8 @@
+node_modules/
+.venv/
+.env
+dist/
+*.docx
+__pycache__/
+*.log
+backend/release/

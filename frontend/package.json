@@ -1,0 +1,38 @@
+{
+  "name": "inodose-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Inodose Monitoring \u2014 web HMI for the Inodose stream inoculation dosing machine (React + Tailwind).",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:api": "tsx watch server/index.ts",
+    "build": "tsc -b && vite build",
+    "build:preview": "tsc -b && vite build --mode preview",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit",
+    "lint": "tsc -b --noEmit",
+    "docs:api": "tsx scripts/gen-api-docs.ts",
+    "start:api": "tsx server/index.ts",
+    "test:e2e": "node tests/e2e.cjs"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-router": "7.6.0",
+    "recharts": "3.1.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.1.8",
+    "@types/express": "5.0.2",
+    "@types/node": "22.15.21",
+    "@types/react": "19.1.5",
+    "@types/react-dom": "19.1.5",
+    "@vitejs/plugin-react": "4.5.0",
+    "express": "4.21.2",
+    "tailwindcss": "4.1.8",
+    "tsx": "4.19.4",
+    "typescript": "5.8.3",
+    "vite": "6.3.5"
+  }
+}

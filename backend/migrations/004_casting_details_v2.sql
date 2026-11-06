@@ -1,0 +1,38 @@
+-- Casting details table, created inside the admin DB (inodose_test).
+-- Same column shape as the original innodose.innodose_casting_details_v2
+-- plus LADLE for the sub-table.
+CREATE TABLE IF NOT EXISTS innodose_casting_details_v2 (
+  id                         BIGINT       NOT NULL AUTO_INCREMENT,
+  datetime                   DATETIME     NOT NULL,
+  `WEIGHT OF CASTING`        FLOAT        NULL,
+  `CONTENT OF INOCULANT`     FLOAT        NULL,
+  `POURING TIME`             FLOAT        NULL,
+  `SPECIFIC GRAVITY`         FLOAT        NULL,
+  `WEIGHT OF INOCULANT`      FLOAT        NULL,
+  `FLOW OF INOCULANT`        FLOAT        NULL,
+  `STEP SIZE`                FLOAT        NULL,
+  `HEAT NO`                  VARCHAR(128) NULL,
+  `PATTERN ID`               VARCHAR(128) NULL,
+  `COMPONENT ID`             VARCHAR(128) NULL,
+  `BOX COUNT`                INT          NULL,
+  `CUMMULATIVE BOX COUNT`    INT          NULL,
+  `CUMMULATIVE DOSES`        INT          NULL,
+  `LOAD PV`                  FLOAT        NULL,
+  `LOAD MEASURED`            FLOAT        NULL,
+  `FLOW RATE_1`              FLOAT NULL, `FLOW RATE_2`  FLOAT NULL, `FLOW RATE_3`  FLOAT NULL, `FLOW RATE_4`  FLOAT NULL,
+  `FLOW RATE_5`              FLOAT NULL, `FLOW RATE_6`  FLOAT NULL, `FLOW RATE_7`  FLOAT NULL, `FLOW RATE_8`  FLOAT NULL,
+  `FLOW RATE_9`              FLOAT NULL, `FLOW RATE_10` FLOAT NULL, `FLOW RATE_11` FLOAT NULL, `FLOW RATE_12` FLOAT NULL,
+  `FLOW RATE_13`             FLOAT NULL, `FLOW RATE_14` FLOAT NULL, `FLOW RATE_15` FLOAT NULL, `FLOW RATE_16` FLOAT NULL,
+  `FLOW RATE_17`             FLOAT NULL, `FLOW RATE_18` FLOAT NULL, `FLOW RATE_19` FLOAT NULL, `FLOW RATE_20` FLOAT NULL,
+  `FLOW RATE_21`             FLOAT NULL, `FLOW RATE_22` FLOAT NULL, `FLOW RATE_23` FLOAT NULL, `FLOW RATE_24` FLOAT NULL,
+  `FLOW RATE_25`             FLOAT NULL, `FLOW RATE_26` FLOAT NULL, `FLOW RATE_27` FLOAT NULL, `FLOW RATE_28` FLOAT NULL,
+  `FLOW RATE_29`             FLOAT NULL, `FLOW RATE_30` FLOAT NULL, `FLOW RATE_31` FLOAT NULL, `FLOW RATE_32` FLOAT NULL,
+  `FLOW RATE_33`             FLOAT NULL, `FLOW RATE_34` FLOAT NULL, `FLOW RATE_35` FLOAT NULL, `FLOW RATE_36` FLOAT NULL,
+  `FLOW RATE_37`             FLOAT NULL, `FLOW RATE_38` FLOAT NULL, `FLOW RATE_39` FLOAT NULL, `FLOW RATE_40` FLOAT NULL,
+  `CURRENT DAY DOSES`        INT          NULL,
+  `CURRENT DAY MISSED DOSES` INT          NULL,
+  `LADLE`                    VARCHAR(20)  NULL,
+  PRIMARY KEY (id),
+  KEY idx_casting_datetime  (datetime),
+  KEY idx_casting_component (`COMPONENT ID`)
+) ENGINE=InnoDB;

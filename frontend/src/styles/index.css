@@ -1,0 +1,142 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------ */
+/*  Fonts (self-hosted, no external requests)                          */
+/* ------------------------------------------------------------------ */
+@font-face { font-family: 'Noto Sans'; font-style: normal; font-weight: 400; font-display: swap; src: url('../assets/fonts/noto-sans-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans'; font-style: normal; font-weight: 500; font-display: swap; src: url('../assets/fonts/noto-sans-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans'; font-style: normal; font-weight: 600; font-display: swap; src: url('../assets/fonts/noto-sans-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans'; font-style: normal; font-weight: 700; font-display: swap; src: url('../assets/fonts/noto-sans-latin-700-normal.woff2') format('woff2'); }
+
+/* ------------------------------------------------------------------ */
+/*  Design tokens (Figma "Inodose" file). Use them as Tailwind classes:  */
+/*  bg-gray-100, text-gray-800, text-brand-red, bg-dosing-blue,          */
+/*  rounded-lg (4px), rounded-dialog (8px), rounded-circle, text-title… */
+/* ------------------------------------------------------------------ */
+@theme {
+  --font-sans: 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
+
+  --color-white: #fff;
+  --color-black: #000;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #e6e6e6;
+  --color-gray-300: #d9d9d9;
+  --color-gray-400: #b3b3b3;
+  --color-gray-500: #757575;
+  --color-gray-600: #444444;
+  --color-gray-800: #2c2c2c;
+
+  --color-brand-red: #e31e24;
+  --color-alert-100: #fdd3d5;
+  --color-alert-300: #fcb3ad;
+  --color-dose-optimal: #009951;
+  --color-dosing-blue: #3271d7;      /* designer round 2 */
+  --color-dosing-blue-dark: #2a61ba; /* designer round 2 */
+  --color-dosing-blue-tint: #eaf2fe;
+  --color-running-green: #14ae5c;    /* "Opened / Started" status */
+  --color-mode-green: #2fd36b;       /* active mode dot on dark buttons */
+
+  --color-flow-pouring-from: #e5a000;
+  --color-flow-pouring-to: #ce8900;
+  --color-flow-dosing: #4775ad;
+  --color-legend-cumulative: #444444;
+  --color-legend-tolerance: #009951;
+
+  --color-status-high: #aff4c6;
+  --color-status-high-border: #6fd497;
+  --color-status-medium: #d9d9d9;
+  --color-status-medium-border: #a6a6a6;
+  --color-status-low: #fcb3ad;
+  --color-status-low-border: #f08a83;
+
+  --radius-sm: 4px;
+  --radius-lg: 4px;      /* designer: 4px on all cards, buttons, inputs */
+  --radius-dialog: 8px;  /* designer: 8px only on pop-up windows */
+  --radius-circle: 100px;
+
+  --text-label: 12px;
+  --text-body: 14px;
+  --text-title: 16px;
+  --text-headline: 20px;
+  --text-display: 24px;
+
+  --spacing-header-h: 44px;
+  --spacing-sidebar-w: 232px;
+  --spacing-sidebar-rail-w: 64px;
+}
+
+/* Typography scale from the design file */
+@utility type-display-1 { font-size: var(--text-display); font-weight: 600; line-height: normal; }
+@utility type-display-2 { font-size: var(--text-display); font-weight: 400; line-height: normal; }
+@utility type-headline-1 { font-size: var(--text-headline); font-weight: 700; letter-spacing: -0.02em; line-height: normal; }
+@utility type-title-1 { font-size: var(--text-title); font-weight: 600; line-height: normal; }
+@utility type-title-3 { font-size: var(--text-title); font-weight: 400; line-height: normal; }
+@utility type-body-1 { font-size: var(--text-body); font-weight: 600; line-height: normal; }
+@utility type-body-2 { font-size: var(--text-body); font-weight: 400; line-height: normal; }
+@utility type-label-1 { font-size: var(--text-label); font-weight: 700; line-height: normal; }
+@utility type-label-2 { font-size: var(--text-label); font-weight: 500; line-height: normal; }
+
+/* Thin scrollbar used by tables and panels */
+@utility scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-300) transparent;
+  &::-webkit-scrollbar { width: 12px; height: 12px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: var(--color-gray-300); border-radius: var(--radius-circle); background-clip: content-box; border: 3px solid transparent; }
+}
+
+/* Alerts list: slim, always-visible scrollbar with arrows (Figma) */
+@utility scroll-alerts {
+  overflow-y: scroll;
+  &::-webkit-scrollbar { width: 9px; }
+  &::-webkit-scrollbar-button { display: none; height: 0; }
+  &::-webkit-scrollbar-button:single-button:vertical:decrement { display: block; height: 12px; background: url('../assets/icons/scroll-up.svg') no-repeat center; }
+  &::-webkit-scrollbar-button:single-button:vertical:increment { display: block; height: 12px; background: url('../assets/icons/scroll-down.svg') no-repeat center; }
+  &::-webkit-scrollbar-track { background: #d9d9d9; border-right: 3px solid transparent; background-clip: padding-box; border-radius: 100px; margin: 2px 0; }
+  &::-webkit-scrollbar-thumb { background: #9e9e9e; border-right: 3px solid transparent; background-clip: padding-box; border-radius: 100px; min-height: 40px; }
+  &::-webkit-scrollbar-thumb:hover { background-color: #757575; }
+}
+
+@layer base {
+  /* The 1920px artboard is built on a 14px root (Tailwind spacing 1 = 3.5px). */
+  html { font-size: 14px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+  html, body, #root { height: 100%; margin: 0; }
+  body { font-family: var(--font-sans); font-size: var(--text-body); color: var(--color-gray-800); background: #fff; font-synthesis-weight: none; }
+  img { max-width: 100%; }
+
+  /* Hand cursor on every clickable control; not-allowed on disabled ones */
+  button:not(:disabled), [role='button']:not([aria-disabled='true']), [role='tab'], [role='option'], [role='menuitem'], a[href],
+  select:not(:disabled), input[type='checkbox']:not(:disabled), input[type='date']:not(:disabled), input[type='file']:not(:disabled),
+  label:has(> input[type='checkbox']:not(:disabled)) { cursor: pointer; }
+  input[type='date']:not(:disabled)::-webkit-calendar-picker-indicator { cursor: pointer; }
+  button:disabled, [aria-disabled='true'] { cursor: not-allowed; }
+
+  /* Smooth state changes on controls */
+  button, a, [role='option'], [role='tab'], input, select, li {
+    transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, transform 0.12s ease;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Motion (disabled for users who prefer reduced motion)              */
+/* ------------------------------------------------------------------ */
+@keyframes ix-page { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes ix-pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes ix-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ix-drop { from { opacity: 0; transform: translateY(-4px) scaleY(0.98); } to { opacity: 1; transform: none; } }
+@keyframes ix-tip { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes ix-bar { from { transform: scaleY(0); } to { transform: none; } }
+@keyframes ix-live { 0%, 100% { box-shadow: 0 0 0 0 rgba(50, 113, 215, 0.45); } 50% { box-shadow: 0 0 0 4px rgba(50, 113, 215, 0); } }
+
+@keyframes ix-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .anim-page { animation: ix-page 0.34s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .anim-pop { animation: ix-pop 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .anim-fade { animation: ix-fade 0.2s ease-out both; }
+  .anim-drop { animation: ix-drop 0.16s ease-out both; transform-origin: top center; }
+  .anim-tip { animation: ix-tip 0.16s ease-out both; }
+  .anim-bar { animation: ix-bar 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-origin: center; }
+  .anim-live { animation: ix-blink 1.8s ease-in-out infinite; }
+  button:not(:disabled):active { transform: scale(0.97); }
+}
