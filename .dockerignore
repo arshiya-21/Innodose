@@ -1,0 +1,9 @@
+node_modules
+**/node_modules
+.venv
+.git
+**/dist
+.env
+**/.env
+*.docx
+simulator
