@@ -46,6 +46,24 @@ function shiftFor(d: Date): string {
   return h >= 7 && h < 15 ? 'Shift A' : 'Shift B';
 }
 
+/** The plant's timezone for what people read on screen (the database itself stores UTC). Override with PLANT_TZ. */
+const PLANT_TZ = process.env.PLANT_TZ || 'Asia/Kolkata';
+/** Wall-clock parts of an instant in the plant timezone. */
+function plantParts(d: Date) {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB', { timeZone: PLANT_TZ, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      .formatToParts(d).map((x) => [x.type, x.value]),
+  ) as Record<string, string>;
+  return { h: Number(p.hour), mi: Number(p.minute), s: Number(p.second), day: Number(p.day), mon: Number(p.month) - 1, y: Number(p.year) };
+}
+/** A stored "YYYY-MM-DD HH:MM:SS" (UTC) -> HH:MM:SS in the plant timezone. */
+function storedToPlantTime(v: string | Date): string {
+  const d = v instanceof Date ? v : new Date(`${String(v).replace(' ', 'T')}Z`);
+  if (Number.isNaN(d.getTime())) return '';
+  const t = plantParts(d);
+  return `${pad2(t.h)}:${pad2(t.mi)}:${pad2(t.s)}`;
+}
+
 function pad2(n: number) { return n.toString().padStart(2, '0'); }
 
 /** In-memory acknowledge set, keyed by `<YYYY-MM-DD>:<id>`. Resets on restart. */
@@ -105,13 +123,13 @@ export function v1CommonRouter(store: AdminStore) {
     return rows.map((s) => ({ id: String(s.id), name: s.name as string, start: hhmm(s.start_time), end: hhmm(s.end_time) }));
   }
   r.get('/shift', auth, async (_req, res) => {
-    const d = new Date();
-    const now = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    const t = plantParts(new Date());
+    const now = `${pad2(t.h)}:${pad2(t.mi)}`;
     const hit = (await loadShifts()).find((s) => (s.start <= s.end ? now >= s.start && now < s.end : now >= s.start || now < s.end));
     res.json({
-      time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`,
-      date: `${pad2(d.getDate())} ${SHORT_MONTHS[d.getMonth()]} ${d.getFullYear()}`,
-      shift: hit ? `Shift ${hit.name}` : shiftFor(d),
+      time: `${pad2(t.h)}:${pad2(t.mi)}:${pad2(t.s)}`,
+      date: `${pad2(t.day)} ${SHORT_MONTHS[t.mon]} ${t.y}`,
+      shift: hit ? `Shift ${hit.name}` : (t.h >= 7 && t.h < 15 ? 'Shift A' : 'Shift B'),
     });
   });
   r.get('/shifts', auth, async (_req, res) => res.json(await loadShifts()));
@@ -255,7 +273,7 @@ export function v1CommonRouter(store: AdminStore) {
         const t = new Date(row.datetime);
         return {
           id,
-          time: `${pad2(t.getHours())}:${pad2(t.getMinutes())}:${pad2(t.getSeconds())}`,
+          time: storedToPlantTime(row.datetime),
           boxNo: row.box_count != null ? `B-${row.box_count}` : '—',
           type: type!,
           acknowledged: ackedAlerts.has(`${today}:${id}`),
@@ -293,7 +311,7 @@ export function v1CommonRouter(store: AdminStore) {
     const type = classifyDose(row.weight_of_inoculant, row.expected_dosage_gms, rules.tols, rules.enabled) ?? 'Dose Miss';
     res.json({
       id: req.params.id,
-      time: `${pad2(t.getHours())}:${pad2(t.getMinutes())}:${pad2(t.getSeconds())}`,
+      time: storedToPlantTime(row.datetime),
       boxNo: row.box_count != null ? `B-${row.box_count}` : '—',
       type,
       acknowledged: true,
