@@ -21,7 +21,10 @@ export interface CompanyInfo {
   gstin?: string; logoDataUrl?: string;
 }
 
-export const NAV: NavKey[] = ['live-dashboard', 'control-panel', 'past-records', 'configurations', 'administration'];
+/** Administrator account created on a fresh install (and restored by tools/reset-admin.mjs). Change the password after first login. */
+export const DEFAULT_ADMIN = { username: 'inodose', password: 'inodose@2026' } as const;
+
+export const NAV: NavKey[] =['live-dashboard', 'control-panel', 'past-records', 'configurations', 'administration'];
 export const MODES: ControlMode[] = ['manual', 'auto', 'joystick'];
 export const ACTIONS: Action[] = ['view', 'add', 'edit', 'delete'];
 

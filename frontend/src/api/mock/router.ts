@@ -4,6 +4,7 @@
  * It keeps state in memory, enforces the same role rules the real backend must,
  * and writes an audit log — so the UI behaves exactly as it will against the backend.
  */
+import type { PlcLogEntry } from '../administration';
 import type {
   AcrossMoldsSeries,
   AlertConfig,
@@ -346,6 +347,11 @@ route('GET', '/dashboard/boxes/:boxId', 'Operator', ({ params }) => {
 });
 
 /* Control panel */
+const mockPlcLogs: PlcLogEntry[] = [];
+route('GET', '/plc-logs', 'Operator', ({ query }) => {
+  const m = query.get('machineId');
+  return ok(m ? mockPlcLogs.filter((l) => l.machineId === m) : mockPlcLogs);
+});
 route('GET', '/machines/:id/control-panel', 'Operator', ({ params }) => ok(controlPanelState(params.id)));
 route('POST', '/machines/:id/settings', 'Supervisor', ({ params, body, user }) => {
   const mode = body?.mode as MachineMode;
@@ -355,6 +361,14 @@ route('POST', '/machines/:id/settings', 'Supervisor', ({ params, body, user }) =
   if (!(p.pouringTimeSec >= 1 && p.pouringTimeSec <= 300)) return fail(400, 'Pouring time must be 1 – 300 sec');
   if (!(p.flowRateGmsPerSec >= 0.1 && p.flowRateGmsPerSec <= 50)) return fail(400, 'Flow rate must be 0.1 – 50 gms/sec');
   const s = machineState(params.id);
+  mockPlcLogs.unshift({
+    id: mockPlcLogs.length + 1, at: new Date().toISOString(), atText: new Date().toLocaleString('en-GB'),
+    machineId: params.id, machineName: machineName(params.id) ?? params.id, user: user?.name ?? '—', username: user?.userId ?? '—',
+    mode, prevMode: s.appliedMode, componentName: p.componentName, prevComponentName: s.params.componentName,
+    pouringTimeSec: p.pouringTimeSec, prevPouringTimeSec: s.params.pouringTimeSec,
+    flowRateGmsPerSec: p.flowRateGmsPerSec, prevFlowRateGmsPerSec: s.params.flowRateGmsPerSec,
+    plcStatus: mode === 'auto' ? 'ok' : 'skipped', plcMessage: mode === 'auto' ? 'Mock PLC write' : null,
+  });
   s.appliedMode = mode;
   s.params = { componentName: p.componentName, pouringTimeSec: p.pouringTimeSec, flowRateGmsPerSec: p.flowRateGmsPerSec };
   if (mode !== 'manual') s.manualOps = clone(seed.manualOps);

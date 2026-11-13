@@ -199,11 +199,11 @@ export function v1DashboardRouter(store: AdminStore) {
     const [[anyLatest]] = await p.query<CastingRow[]>(`${CASTING_SELECT} ORDER BY c.datetime DESC LIMIT 1`);
     const latestMs = anyLatest ? new Date(anyLatest.datetime).getTime() : 0;
     const liveConnection = latestMs > 0 && Date.now() - latestMs < 120_000;
-    // Values applied in the Control Panel for the shown component override the component master here.
-    // Expected dose / flow / pouring time follow the component that is pouring right now (the one the chart
-    // plots). If the machine is pouring something other than the applied component, use that component's master values.
+    // Values applied in the Control Panel override the component master here, straight away, for as long as they
+    // are applied (3 hours / until the next plant day — then v1Plc's auto reset clears them).
+    // With nothing applied, expected dose / flow / pouring time follow the component that is pouring right now.
     const pouring = liveConnection && anyLatest ? comps.get(anyLatest.component_id) : undefined;
-    const followPour = !!pouring && pouring.component_id !== comp?.component_id;
+    const followPour = !activeId && !!pouring && pouring.component_id !== comp?.component_id;
     const ec = followPour ? pouring : comp;
     const ov = !followPour && activeId && comp && mstate?.applied_component_id === comp.component_id ? mstate : null;
     const pourT = ov?.applied_pouring_time ? Number(ov.applied_pouring_time) : Number(ec?.pouring_time_sec ?? 0);

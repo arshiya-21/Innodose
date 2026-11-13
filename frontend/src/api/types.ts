@@ -243,6 +243,10 @@ export interface ControlPanelState {
   storage: StorageStatus;
   manualOps: ManualOperation[];
   inoculantDosedGms: number | null;
+  /** Applied (temporary) values: when they go back to the component master (3 hours / next day). Absent/null = master values. */
+  overrideUntil?: string | null;
+  /** same, as "13-11-2026 14:30" in the plant timezone */
+  overrideUntilText?: string | null;
 }
 
 export interface ApplySettingsRequest {

@@ -1,7 +1,7 @@
 /**
  * Restores:
  *   - Administrator role with every permission (nav + control modes, C/E/V/D)
- *   - `admin` user with password `admin`, Administrator role, active
+ *   - `inodose` user with password `inodose@2026`, Administrator role, active
  *
  * Run this when the admin account has been locked out, its permissions
  * cleared, or its password changed. Does NOT touch other roles or users.
@@ -24,6 +24,9 @@ function fullPerms() {
   };
 }
 const hashPw = pw => createHash('sha256').update(pw).digest('hex');
+// Same default as backend/src/admin/types.ts (DEFAULT_ADMIN).
+const USERNAME = 'inodose';
+const PASSWORD = 'inodose@2026';
 
 const conn = await mysql.createConnection({
   host: process.env.MYSQL_HOST ?? 'localhost',
@@ -55,24 +58,25 @@ if (adminRows[0]) {
   console.log(`Administrator role created (id=${adminRoleId}).`);
 }
 
-// Ensure the admin user exists, is active, and uses password `admin`.
+// Ensure the default user exists, is active, and uses the default password.
 const [userRows] = await conn.query(
-  `SELECT id FROM users WHERE LOWER(username) = 'admin' LIMIT 1`,
+  `SELECT id FROM users WHERE LOWER(username) = ? LIMIT 1`,
+  [USERNAME],
 );
 if (userRows[0]) {
   await conn.query(
     `UPDATE users SET password_hash = ?, role_id = ?, active = 1 WHERE id = ?`,
-    [hashPw('admin'), adminRoleId, userRows[0].id],
+    [hashPw(PASSWORD), adminRoleId, userRows[0].id],
   );
-  console.log(`admin user updated: password = 'admin', role = Administrator, active.`);
+  console.log(`${USERNAME} user updated: password reset to default, role = Administrator, active.`);
 } else {
   await conn.query(
     `INSERT INTO users (id, username, password_hash, full_name, email, role_id, active)
-     VALUES (?, 'admin', ?, 'Plant Administrator', 'admin@example.com', ?, 1)`,
-    [randomUUID(), hashPw('admin'), adminRoleId],
+     VALUES (?, ?, ?, 'Plant Administrator', '', ?, 1)`,
+    [randomUUID(), USERNAME, hashPw(PASSWORD), adminRoleId],
   );
-  console.log(`admin user created with password 'admin'.`);
+  console.log(`${USERNAME} user created with the default password.`);
 }
 
 await conn.end();
-console.log('Done. Login at /login as: admin / admin');
+console.log(`Done. Login as: ${USERNAME} / ${PASSWORD}`);

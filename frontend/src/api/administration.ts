@@ -75,7 +75,28 @@ export interface DbDetails {
 /** Allen-Bradley SLC tag per manual operation: write openValue to openTag to Open/Start, closeValue to closeTag to Close/Stop. */
 export type PlcDataType = 'boolean' | 'integer' | 'float';
 export interface PlcTag { key: string; label: string; /** how values are written; boolean by default */ dataType: PlcDataType; openTag: string; openValue: number; closeTag: string; closeValue: number }
-export interface PlcConfig { ip: string; tags: PlcTag[] }
+/** Auto Mode setpoint: the applied value is written to `tag` on Control Panel Apply. */
+export interface PlcSetpointTag { tag: string; dataType: PlcDataType }
+export interface PlcSetpoints { pouringTime: PlcSetpointTag; flowRate: PlcSetpointTag }
+export interface PlcConfig { ip: string; tags: PlcTag[]; setpoints: PlcSetpoints }
+
+/** One Control Panel Apply: new values, previous values (shown in brackets), who/when, PLC result. */
+export interface PlcLogEntry {
+  id: number;
+  at: string;
+  /** date + time in the plant timezone, e.g. "13-11-2026 10:30:15" */
+  atText: string;
+  machineId: string;
+  machineName: string;
+  user: string;
+  username: string;
+  mode: string; prevMode: string | null;
+  componentName: string | null; prevComponentName: string | null;
+  pouringTimeSec: number | null; prevPouringTimeSec: number | null;
+  flowRateGmsPerSec: number | null; prevFlowRateGmsPerSec: number | null;
+  plcStatus: 'ok' | 'failed' | 'skipped';
+  plcMessage: string | null;
+}
 
 export interface EmailSettings {
   enabled: boolean;
@@ -123,4 +144,7 @@ export const administrationApi = {
   savePlcConfig: (body: PlcConfig) => api.put<PlcConfig>('/administration/plc-config', body),
   testPlcWrite: (body: { ip: string; tag: string; value: number; dataType: PlcDataType }) =>
     api.post<{ ok: boolean; message: string }>('/administration/plc-config/test', body),
+  /** PLC change log; pass a machine id to see one machine only. */
+  plcLogs: (machineId?: string) =>
+    api.get<PlcLogEntry[]>(`/plc-logs${machineId ? `?machineId=${encodeURIComponent(machineId)}` : ''}`),
 };

@@ -1,14 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Button, TextField } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
-import { administrationApi, type PlcConfig, type PlcDataType, type PlcTag } from '@/api/administration';
+import { administrationApi, type PlcConfig, type PlcDataType, type PlcSetpoints, type PlcTag } from '@/api/administration';
 import { ApiError } from '@/api';
+import { PlcLogsDialog } from '@/features/control-panel/PlcLogsDialog';
 
 /**
  * PLC details (Allen-Bradley SLC). For each manual operation, the tag + value written
  * to Open and to Close. "Test" writes that single tag/value to the PLC now.
+ * Auto Mode tags: Control Panel "Apply" writes the pouring time and flow rate to these.
  */
-const EMPTY: PlcConfig = { ip: '192.168.0.12', tags: [] };
+const DEFAULT_SETPOINTS: PlcSetpoints = { pouringTime: { tag: '', dataType: 'integer' }, flowRate: { tag: '', dataType: 'float' } };
+const EMPTY: PlcConfig = { ip: '192.168.0.12', tags: [], setpoints: DEFAULT_SETPOINTS };
+const SETPOINTS: { key: keyof PlcSetpoints; label: string; placeholder: string }[] = [
+  { key: 'pouringTime', label: 'Pouring Time (sec)', placeholder: 'Tag e.g. N7:10' },
+  { key: 'flowRate', label: 'Flow Rate (gms/sec)', placeholder: 'Tag e.g. F8:10' },
+];
+const withDefaults = (c: PlcConfig): PlcConfig => ({ ...c, setpoints: { ...DEFAULT_SETPOINTS, ...(c.setpoints ?? {}) } });
 
 export function PlcPanel() {
   const { canNav } = useAuth();
@@ -20,10 +28,12 @@ export function PlcPanel() {
   const [testing, setTesting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [testValues, setTestValues] = useState<Record<keyof PlcSetpoints, number>>({ pouringTime: 10, flowRate: 2.5 });
 
   useEffect(() => {
     administrationApi.getPlcConfig()
-      .then((c) => { setForm(c); setOriginal(c); })
+      .then((raw) => { const c = withDefaults(raw); setForm(c); setOriginal(c); })
       .catch((e) => setError(e instanceof ApiError ? e.message : 'Failed to load PLC details.'))
       .finally(() => setLoading(false));
   }, []);
@@ -31,11 +41,13 @@ export function PlcPanel() {
   const dirty = JSON.stringify(form) !== JSON.stringify(original);
   const setTag = (key: string, patch: Partial<PlcTag>) =>
     setForm((f) => ({ ...f, tags: f.tags.map((t) => (t.key === key ? { ...t, ...patch } : t)) }));
+  const setSetpoint = (key: keyof PlcSetpoints, patch: Partial<PlcSetpoints[typeof key]>) =>
+    setForm((f) => ({ ...f, setpoints: { ...f.setpoints, [key]: { ...f.setpoints[key], ...patch } } }));
 
   async function save() {
     setBusy(true); setError(null); setStatus(null);
     try {
-      const saved = await administrationApi.savePlcConfig(form);
+      const saved = withDefaults(await administrationApi.savePlcConfig(form));
       setForm(saved); setOriginal(saved);
       setStatus('PLC details saved.');
     } catch (e) {
@@ -73,14 +85,58 @@ export function PlcPanel() {
 
   return (
     <div className="w-full space-y-6">
-      <div>
-        <h2 className="type-headline-1 text-gray-800">PLC Details</h2>
-        <p className="mt-3 type-body-2 text-gray-600">
-          Allen-Bradley SLC PLC used for Manual Mode. The value is written to the tag when the operator presses Open or Close, using the data type chosen for each operation (Boolean by default).
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="type-headline-1 text-gray-800">PLC Details</h2>
+          <p className="mt-3 type-body-2 text-gray-600">
+            Allen-Bradley SLC PLC used for Manual Mode. The value is written to the tag when the operator presses Open or Close, using the data type chosen for each operation (Boolean by default).
+          </p>
+        </div>
+        <Button variant="secondary" onClick={() => setLogsOpen(true)}>PLC Logs</Button>
       </div>
 
       <TextField label="PLC IP Address" value={form.ip} onChange={(e) => setForm({ ...form, ip: e.target.value })} disabled={!allowed} />
+
+      {/* Auto Mode: pouring time + flow rate written on Control Panel Apply */}
+      <div>
+        <h3 className="type-title-1 text-gray-800">Auto Mode Tags</h3>
+        <p className="mt-1 type-body-2 text-gray-600">
+          When the operator presses Apply in Auto Mode, the pouring time and flow rate are written to these tags. If the write fails, the settings are not applied.
+        </p>
+        <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {SETPOINTS.map((s) => {
+            const sp = form.setpoints[s.key];
+            const id = `setpoint-${s.key}`;
+            return (
+              <fieldset key={s.key} className="min-w-0 space-y-3 rounded-sm border border-gray-200 p-3">
+                <legend className="px-1 type-title-3 text-gray-800">{s.label}</legend>
+                <label className="flex items-center gap-2 type-label-1 text-gray-800">
+                  Data type
+                  <select
+                    value={sp.dataType}
+                    onChange={(e) => setSetpoint(s.key, { dataType: e.target.value as PlcDataType })}
+                    disabled={!allowed}
+                    className="h-9 rounded-lg border border-gray-300 px-2 type-body-2 focus:border-gray-800 focus:outline-none disabled:bg-gray-100"
+                  >
+                    <option value="integer">Integer</option>
+                    <option value="float">Float</option>
+                  </select>
+                </label>
+                <div>
+                  <span className="mb-1 block type-body-2 text-gray-600">Tag / test value</span>
+                  <div className="grid grid-cols-[minmax(0,1fr)_80px_auto] items-end gap-2">
+                    <TextField aria-label={`${s.label} tag`} placeholder={s.placeholder} value={sp.tag} onChange={(e) => setSetpoint(s.key, { tag: e.target.value })} disabled={!allowed} />
+                    <TextField aria-label={`${s.label} test value`} type="number" title="Test value" value={testValues[s.key]} onChange={(e) => setTestValues((v) => ({ ...v, [s.key]: Number(e.target.value) }))} disabled={!allowed} />
+                    <Button variant="secondary" loading={testing === id} disabled={!allowed || !sp.tag || !form.ip || !!testing} onClick={() => test(id, sp.tag, testValues[s.key], sp.dataType)}>Test</Button>
+                  </div>
+                </div>
+              </fieldset>
+            );
+          })}
+        </div>
+      </div>
+
+      <h3 className="type-title-1 text-gray-800">Manual Mode Tags</h3>
 
       {/* One card per operation, four across on wide screens (Tag + Value + Test inside each card) */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -112,6 +168,7 @@ export function PlcPanel() {
       </div>
       {error && <p role="alert" className="type-body-2 text-brand-red">{error}</p>}
       {status && <p role="status" className="type-body-2 text-dose-optimal">{status}</p>}
+      <PlcLogsDialog open={logsOpen} onClose={() => setLogsOpen(false)} />
     </div>
   );
 }

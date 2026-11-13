@@ -1,7 +1,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import {
   type AdminStore, type CompanyInfo, type Permissions, type Role, type User,
-  NAV, MODES, perms,
+  NAV, MODES, perms, DEFAULT_ADMIN,
 } from './types.ts';
 
 const hashPw = (pw: string) => createHash('sha256').update(pw).digest('hex');
@@ -24,11 +24,11 @@ export function makeMemoryStore(): AdminStore {
   [adminRole, operatorRole, viewerRole].forEach(r => roles.set(r.id, r));
 
   const admin: User = {
-    id: randomUUID(), username: 'admin', fullName: 'Plant Administrator',
-    email: 'admin@example.com', roleId: adminRole.id, active: true,
+    id: randomUUID(), username: DEFAULT_ADMIN.username, fullName: 'Plant Administrator',
+    email: '', roleId: adminRole.id, active: true,
   };
   users.set(admin.id, admin);
-  passwords.set(admin.id, hashPw('admin'));
+  passwords.set(admin.id, hashPw(DEFAULT_ADMIN.password));
 
   let company: CompanyInfo = {
     name: 'Gujarat Metal Cast', address: '', phone: '', email: '', gstin: '', logoDataUrl: '',

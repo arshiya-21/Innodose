@@ -9,6 +9,7 @@ import { useNow } from '@/hooks/useNow';
 import { cn } from '@/lib/cn';
 import { round2 } from '@/lib/format';
 import machineImg from '@/assets/images/inodose-machine.png';
+import { PlcLogsDialog } from './PlcLogsDialog';
 
 const MODES: { id: MachineMode; label: string; icon: IconName; iconActive: IconName }[] = [
   { id: 'auto', label: 'Auto Mode', icon: 'mode-auto', iconActive: 'mode-auto-filled' },
@@ -37,6 +38,7 @@ export function ControlPanelPage() {
   const [params, setParams] = useState<MachineParams | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [logsOpen, setLogsOpen] = useState(false);
 
   const applied = state.data;
   useEffect(() => {
@@ -138,7 +140,14 @@ export function ControlPanelPage() {
           <span aria-hidden className={cn('h-2 w-2 rounded-full', applied.connected ? 'anim-live bg-dosing-blue' : 'bg-red-700')} />
           <span className={cn('type-body-1', applied.connected ? 'text-dosing-blue-dark' : 'font-bold text-red-700')}>{applied.connected ? 'Live Connection' : 'Disconnected'}</span>
         </span>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setLogsOpen(true)}
+            className="flex h-[38px] items-center justify-center rounded-circle border border-gray-400 bg-white px-[18px] type-title-1 text-gray-800 hover:bg-gray-100"
+          >
+            PLC Logs
+          </button>
           <button
             type="button"
             onClick={onApplyClick}
@@ -215,6 +224,11 @@ export function ControlPanelPage() {
       <section className="grid grid-cols-[508px_minmax(0,1fr)] gap-0 px-4 py-4">
         <div className="border-r border-gray-300 pr-8">
           <h2 className="type-headline-1 text-gray-600">Set Machine Parameters</h2>
+          <p className="mt-2 type-body-2 text-gray-500">
+            {applied.overrideUntilText
+              ? `Applied values (temporary) — back to component master at ${applied.overrideUntilText}`
+              : 'Component master values'}
+          </p>
           <div className="mt-7 flex flex-col gap-[24px]">
             <ParamRow icon="param-component" label="Component Name:">
               <Select
@@ -317,6 +331,8 @@ export function ControlPanelPage() {
           </div>
         )}
       </section>
+
+      <PlcLogsDialog open={logsOpen} onClose={() => setLogsOpen(false)} machineId={machineId} />
 
       <ConfirmDialog
         open={confirmOpen}

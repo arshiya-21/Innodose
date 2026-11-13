@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import mysql, { type Pool, type RowDataPacket } from 'mysql2/promise';
 import {
   type AdminStore, type CompanyInfo, type Permissions, type Role, type User,
-  NAV, MODES, perms,
+  NAV, MODES, perms, DEFAULT_ADMIN,
 } from './types.ts';
 import { log } from '../lib/logger.ts';
 
@@ -261,8 +261,8 @@ async function seedIfEmpty(pool: Pool) {
     }
     await pool.query(
       `INSERT INTO users (id, username, password_hash, full_name, email, role_id, active)
-       VALUES (?, 'admin', ?, 'Plant Administrator', 'admin@example.com', ?, 1)`,
-      [randomUUID(), hashPw('admin'), admin.id],
+       VALUES (?, ?, ?, 'Plant Administrator', '', ?, 1)`,
+      [randomUUID(), DEFAULT_ADMIN.username, hashPw(DEFAULT_ADMIN.password), admin.id],
     );
   }
 
